@@ -8,6 +8,7 @@ async function bootstrap() {
   app.enableCors();
 
   const config = new DocumentBuilder()
+    .addBearerAuth()
     .setTitle('Social Media API')
     .setDescription('Social media api like facebook')
     .setVersion('1.0')

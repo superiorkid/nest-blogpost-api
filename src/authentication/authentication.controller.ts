@@ -7,6 +7,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthenticationService } from './authentication.service';
+import { Public } from './decorators/public.decorator';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 
@@ -20,6 +21,7 @@ export class AuthenticationController {
    * @param signUpDto - Object containing user details for registration.
    * @returns An object with user details upon successful registration.
    */
+  @Public()
   @Post('sign-up')
   @ApiCreatedResponse({
     description: 'Successfully registered user',
@@ -35,6 +37,7 @@ export class AuthenticationController {
    * @param signInDto - Object containing email and password for login.
    * @returns An object with access token upon successful login.
    */
+  @Public()
   @Post('sign-in')
   @ApiUnauthorizedResponse({
     description: 'Unauthorized: Invalid credentials or authentication token.',

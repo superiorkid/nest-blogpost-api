@@ -5,6 +5,8 @@ import { DatabasesModule } from 'src/databases/databases.module';
 import { UsersModule } from 'src/users/users.module';
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthenticationGuard } from './guards/authentication.guard';
 
 @Module({
   imports: [
@@ -23,6 +25,9 @@ import { AuthenticationService } from './authentication.service';
     }),
   ],
   controllers: [AuthenticationController],
-  providers: [AuthenticationService],
+  providers: [
+    AuthenticationService,
+    { provide: APP_GUARD, useClass: AuthenticationGuard },
+  ],
 })
 export class AuthenticationModule {}
