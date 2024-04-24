@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DatabasesService } from 'src/databases/databases.service';
@@ -65,14 +70,63 @@ export class UsersService {
         password: hashedPassword,
         profile: { create: { firstName, lastName } },
         accounts: {
-          create: { providerId, providerType },
+          create: providerId ? { providerId, providerType } : undefined,
         },
       },
       // Include the associated profile and account data in the returned user object.
-      include: { profile: true, accounts: true },
+      include: { profile: true, accounts: !!providerId },
     });
 
     // Return the newly created user object.
     return newUser;
+  }
+
+  /**
+   * Updates the profile of a user with the provided data.
+   * Retrieves the user by ID, validates its existence, and updates the profile using Prisma.
+   * @param params Object containing profile data to be updated and the ID of the user.
+   * @returns An object containing a message indicating the success of the update,
+   *          the updated user data, and the HTTP status code.
+   * @throws NotFoundException if the user with the specified ID is not found.
+   * @throws InternalServerErrorException if an error occurs while updating the profile.
+   */
+  async updateProfile(params: {
+    data: Prisma.ProfileUpdateInput;
+    userId: string;
+  }) {
+    try {
+      // Destructure parameters.
+      const { data, userId } = params;
+
+      // Find the user by ID.
+      const user = await this.findOne({ id: userId });
+      // If user not found, throw NotFoundException.
+      if (!user) throw new NotFoundException('user not found');
+
+      // Update the user's profile using Prisma.
+      const updateUserProfile = await this.prisma.profile.update({
+        where: { userId },
+        data,
+      });
+      // Omit 'id' from the updated user profile data.
+      const { id, ...userData } = updateUserProfile;
+
+      // Return a success message along with the updated user data and status code.
+      return {
+        message: `Update ${userData.firstName} profile successfully`,
+        statusCode: HttpStatus.OK,
+        data: userData,
+      };
+    } catch (error) {
+      // Handle specific exceptions.
+      if (error instanceof NotFoundException) {
+        // If user not found, rethrow NotFoundException.
+        throw error;
+      } else {
+        // Log other errors and throw InternalServerErrorException.
+        console.log(error);
+        throw new InternalServerErrorException('failed to update profile');
+      }
+    }
   }
 }
