@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { Request } from 'express';
 import { DatabasesService } from 'src/databases/databases.service';
 import { UsersService } from 'src/users/users.service';
 import { SignInDto } from './dto/sign-in.dto';
@@ -33,30 +34,18 @@ export class AuthenticationService {
 
       // check if user already exists
       // if exists throw conflict exception
-      const user = await this.usersService.findOne({ email });
+      const user = await this.usersService.validateUser(email);
       if (user) throw new ConflictException('user already exist');
 
-      // generate password hash
-      const salt = await bcrypt.genSalt();
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      // create user & profile data
-      const newUser = await this.prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          profile: { create: { firstName, lastName } },
-        },
-        include: { profile: true },
+      const newUser = await this.usersService.createUser({
+        userInputs: { email, password },
+        profileInputs: { firstName, lastName },
       });
-
-      // Extract user data excluding ID
-      const { id, ...userData } = newUser;
 
       return {
         message: 'Create user successfully',
         statusCode: HttpStatus.CREATED,
-        data: userData,
+        data: newUser,
       };
     } catch (error) {
       if (error instanceof ConflictException) {
@@ -80,9 +69,10 @@ export class AuthenticationService {
   async login(signInDto: SignInDto) {
     try {
       // Find the user by email
-      const user = await this.usersService.findOne({ email: signInDto.email });
+      const user = await this.usersService.validateUser(signInDto.email);
       // If user not found, throw UnauthorizedException
-      if (!user) throw new UnauthorizedException('Invalid credentials');
+      if (!user || !user.password)
+        throw new UnauthorizedException('Invalid credentials');
 
       // Compare password
       const passwordMatch = await bcrypt.compare(
@@ -115,5 +105,24 @@ export class AuthenticationService {
         throw new InternalServerErrorException('Failed to login');
       }
     }
+  }
+
+  /**
+   * Handles the callback from Google OAuth authentication.
+   * Retrieves the user information from the request object.
+   * @param req The HTTP request object containing the user information.
+   * @returns A message indicating the status of the Google OAuth authentication and the user information if available.
+   */
+  async googleLogin(req: Request) {
+    // Check if user information is available in the request object.
+    if (!req.user) {
+      return 'No user from google';
+    }
+
+    // If user information is available, return a message along with the user details.
+    return {
+      message: 'User information from google',
+      user: req.user,
+    };
   }
 }

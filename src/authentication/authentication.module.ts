@@ -7,6 +7,7 @@ import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticationGuard } from './guards/authentication.guard';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AuthenticationGuard } from './guards/authentication.guard';
   controllers: [AuthenticationController],
   providers: [
     AuthenticationService,
+    GoogleStrategy,
     { provide: APP_GUARD, useClass: AuthenticationGuard },
   ],
 })
