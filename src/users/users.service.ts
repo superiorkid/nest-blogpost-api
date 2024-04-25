@@ -12,8 +12,13 @@ import { DatabasesService } from 'src/databases/databases.service';
 export class UsersService {
   constructor(private prisma: DatabasesService) {}
 
-  async findOne(where: Prisma.UserWhereInput) {
-    return this.prisma.user.findFirst({ where });
+  async findOne(params: {
+    where: Prisma.UserWhereInput;
+    include?: Prisma.UserInclude;
+  }) {
+    const { where, include } = params;
+
+    return this.prisma.user.findFirst({ where, include });
   }
 
   /**
@@ -23,7 +28,7 @@ export class UsersService {
    */
   async validateUser(email: string) {
     // Find the user with the given email address using the usersService
-    const user = await this.findOne({ email });
+    const user = await this.findOne({ where: { email } });
     // If no user is found, return null
     if (!user) return null;
     // If a user is found, return the user object
@@ -99,7 +104,7 @@ export class UsersService {
       const { data, userId } = params;
 
       // Find the user by ID.
-      const user = await this.findOne({ id: userId });
+      const user = await this.findOne({ where: { id: userId } });
       // If user not found, throw NotFoundException.
       if (!user) throw new NotFoundException('user not found');
 
@@ -126,6 +131,54 @@ export class UsersService {
         // Log other errors and throw InternalServerErrorException.
         console.log(error);
         throw new InternalServerErrorException('failed to update profile');
+      }
+    }
+  }
+
+  /**
+   * Retrieves a user profile based on the provided criteria.
+   * @param params An object containing criteria for querying user and profile.
+   * @returns An object containing the retrieved user profile data.
+   * @throws {NotFoundException} If the user is not found.
+   * @throws {InternalServerErrorException} If an error occurs during the process.
+   */
+  async getUserProfile(params: {
+    whereUser: Prisma.UserWhereInput;
+    whereProfile: Prisma.ProfileWhereInput;
+    includeProfile?: Prisma.ProfileInclude;
+  }) {
+    // Destructure parameters
+    const { whereUser, whereProfile, includeProfile } = params;
+
+    try {
+      // Find a user based on the provided criteria
+      const user = await this.findOne({ where: whereUser });
+      // If user not found, throw NotFoundException
+      if (!user) throw new NotFoundException('user not found');
+
+      // Find a profile based on the provided criteria, including optional related data
+      const profile = await this.prisma.profile.findFirst({
+        where: whereProfile,
+        include: includeProfile,
+      });
+
+      // Construct success response
+      return {
+        message: `Get ${profile.firstName} profile successfully`,
+        statusCode: HttpStatus.OK,
+        data: profile,
+      };
+    } catch (error) {
+      // Check if the error is NotFoundException and rethrow it
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        // Log other errors
+        console.log(error);
+        // Throw internal server error for other types of errors
+        throw new InternalServerErrorException(
+          'failed to get user information',
+        );
       }
     }
   }
