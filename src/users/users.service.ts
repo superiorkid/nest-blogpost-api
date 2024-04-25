@@ -182,4 +182,38 @@ export class UsersService {
       }
     }
   }
+
+  /**
+   * Remove a user profile based on a unique identifier.
+   * @param where An object specifying the unique identifier of the user.
+   * @returns A message indicating the success of the deletion operation.
+   * @throws {NotFoundException} If the user with the specified unique identifier is not found.
+   * @throws {InternalServerErrorException} If an unexpected error occurs during the deletion operation.
+   */
+  async removeUser(where: Prisma.UserWhereUniqueInput) {
+    try {
+      // Find the user based on the provided unique identifier
+      const user = await this.findOne({ where });
+      if (!user) throw new NotFoundException('user not found');
+
+      // Delete the user
+      await this.prisma.user.delete({ where });
+
+      // Return success message
+      return {
+        message: 'delete user',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      // Handle exceptions
+      if (error instanceof NotFoundException) {
+        // Rethrow NotFoundException
+        throw error;
+      } else {
+        // Log and throw InternalServerErrorException for other errors
+        console.error(error);
+        throw new InternalServerErrorException('failed to delete user');
+      }
+    }
+  }
 }

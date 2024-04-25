@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -20,6 +21,27 @@ import { UsersService } from './users.service';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  /**
+   * Delete a user profile by ID.
+   * @param id The ID of the user whose profile is to be deleted.
+   * @returns A message indicating the success of the deletion operation.
+   */
+  @ApiTags('Users')
+  @ApiOkResponse({ description: 'Delete user successfully' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiBearerAuth()
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the user whose profile is to be deleted.',
+    type: String,
+    required: true,
+  })
+  @Delete(':id')
+  async deleteUser(@Param('id') id: string) {
+    return this.usersService.removeUser({ id });
+  }
 
   /**
    * Updates the profile of a user identified by the provided ID.
