@@ -12,8 +12,8 @@ export class SignUpDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
-    description: 'enter your first name',
-    default: 'wina',
+    description: 'Enter your first name',
+    example: 'Wina',
     type: String,
   })
   firstName: string;
@@ -22,15 +22,15 @@ export class SignUpDto {
   @IsOptional()
   @ApiProperty({
     type: String,
-    description: 'enter your last name',
-    default: 'safitri',
+    description: 'Enter your last name',
+    example: 'Safitri',
   })
   lastName: string;
 
   @IsEmail()
   @IsNotEmpty()
   @ApiProperty({
-    description: 'enter your email address',
+    description: 'Enter your email address',
     default: 'wina_safitri@email.com',
     type: String,
   })
@@ -40,16 +40,18 @@ export class SignUpDto {
   @IsNotEmpty()
   @Length(6, 25)
   @ApiProperty({
-    default: '',
-    description: 'enter your password',
+    example: '',
+    description: 'Enter your password (6-25 characters)',
     type: String,
   })
   password: string;
 
-  @Match(SignUpDto, (object) => object.password)
+  @Match(SignUpDto, (object) => object.password, {
+    message: 'Passwords do not match',
+  })
   @ApiProperty({
     default: '',
-    description: 'repeat your password',
+    description: 'Repeat your password (must match the password)',
     type: String,
   })
   confirmPassword: string;
