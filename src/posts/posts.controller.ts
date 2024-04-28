@@ -1,4 +1,4 @@
-import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Post, Req, ValidationPipe } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
@@ -8,17 +8,19 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
-import slug from 'slug';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostsService } from './posts.service';
 
 @Controller('posts')
 export class PostsController {
-  private uploadPath: string;
-  constructor(private readonly postsService: PostsService) {
-    this.uploadPath = './public/posts';
-  }
+  constructor(private readonly postsService: PostsService) {}
 
+  /**
+   * Endpoint for creating a post.
+   * @param req - The request object.
+   * @param createPostDto - The DTO containing data for creating the post.
+   * @returns A response indicating the success of the post creation.
+   */
   @ApiTags('Posts')
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
@@ -27,35 +29,10 @@ export class PostsController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @Post()
   @FormDataRequest()
-  async createPost(@Body(new ValidationPipe()) createPostDto: CreatePostDto) {
-    const { body, summary, title } = createPostDto;
-
-    const postSlug = slug(title);
-    const tags = this.postsService.convertToArray(createPostDto.tags, ',');
-
-    await this.postsService.createDirectoryIfNoExists(this.uploadPath);
-    const cover = await this.postsService.uploadFile(
-      createPostDto.cover,
-      this.uploadPath,
-      postSlug,
-    );
-
-    return this.postsService.create({
-      title,
-      summary,
-      body,
-      cover,
-      slug: postSlug,
-      tags: {
-        create: {
-          tag: {
-            connectOrCreate: tags.map((tag) => ({
-              where: { name: tag },
-              create: { name: tag },
-            })),
-          },
-        },
-      },
-    });
+  async createPost(
+    @Req() req,
+    @Body(new ValidationPipe()) createPostDto: CreatePostDto,
+  ) {
+    return this.postsService.create({ createPostDto, userId: req.user.sub });
   }
 }
