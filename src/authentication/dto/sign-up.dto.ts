@@ -7,6 +7,7 @@ import {
   Length,
 } from 'class-validator';
 import { Match } from '../decorators/match.decorator';
+import { Transform } from 'class-transformer';
 
 export class SignUpDto {
   @IsString()
@@ -16,6 +17,7 @@ export class SignUpDto {
     example: 'Wina',
     type: String,
   })
+  @Transform(({ value }: { value: string }) => value.toLowerCase())
   firstName: string;
 
   @IsString()
@@ -25,6 +27,7 @@ export class SignUpDto {
     description: 'Enter your last name',
     example: 'Safitri',
   })
+  @Transform(({ value }: { value: string }) => value.toLowerCase())
   lastName: string;
 
   @IsEmail()
@@ -34,6 +37,7 @@ export class SignUpDto {
     default: 'wina_safitri@email.com',
     type: String,
   })
+  @Transform(({ value }: { value: string }) => value.toLowerCase())
   email: string;
 
   @IsString()

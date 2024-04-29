@@ -37,7 +37,9 @@ export class AuthenticationController {
   })
   @ApiConflictResponse({ description: 'User already exist' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async signUp(@Body(new ValidationPipe()) signUpDto: SignUpDto) {
+  async signUp(
+    @Body(new ValidationPipe({ transform: true })) signUpDto: SignUpDto,
+  ) {
     return this.authenticationService.register(signUpDto);
   }
 
@@ -53,7 +55,9 @@ export class AuthenticationController {
   })
   @ApiCreatedResponse({ description: 'Successfully logged in.' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error.' })
-  async signIn(@Body() signInDto: SignInDto) {
+  async signIn(
+    @Body(new ValidationPipe({ transform: true })) signInDto: SignInDto,
+  ) {
     return this.authenticationService.login(signInDto);
   }
 
