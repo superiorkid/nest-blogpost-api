@@ -25,17 +25,8 @@ export class CreatePostDto {
   @IsString()
   @IsNotEmpty()
   @Length(6, 70)
+  @Transform(({ value }: { value: string }) => value.toLowerCase())
   title: string;
-
-  @ApiProperty({
-    description: 'Summary of the blog post',
-    example:
-      "In today's fast-paced world, managing your time effectively is crucial for productivity and success...",
-  })
-  @IsString()
-  @IsNotEmpty()
-  @Length(50, 160)
-  summary: string;
 
   @ApiProperty({
     description: 'Body/content of the blog post',
@@ -56,7 +47,8 @@ export class CreatePostDto {
   @IsString({ each: true })
   @ArrayNotEmpty()
   @Transform(({ value }) => {
-    return isArray(value) ? value : Array(value);
+    const tagsArray: string[] = isArray(value) ? value : Array(value);
+    return tagsArray.map((tag) => tag.toLocaleLowerCase());
   })
   tags: string[];
 

@@ -50,10 +50,9 @@ model Profile {
 model Post {
   id        String        @id @default(cuid())
   authorId  String
-  author    User          @relation(fields: [authorId], references: [id])
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title     String
   slug      String        @unique
-  summary   String
   body      String        @db.Text
   cover     String
   tags      TagsOnPosts[]
@@ -71,7 +70,7 @@ model Tag {
 }
 
 model TagsOnPosts {
-  post       Post     @relation(fields: [postId], references: [id])
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId     String
   tag        Tag      @relation(fields: [tagId], references: [id])
   tagId      Int

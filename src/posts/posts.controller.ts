@@ -1,17 +1,20 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Req,
   ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
@@ -21,8 +24,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
+import { Public } from 'src/authentication/decorators/public.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
-import { PostsService } from './posts.service';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { PostsService } from './services/posts.service';
 
 @Controller('posts')
 export class PostsController {
@@ -44,9 +49,18 @@ export class PostsController {
   @FormDataRequest()
   async createPost(
     @Req() req,
-    @Body(new ValidationPipe()) createPostDto: CreatePostDto,
+    @Body(new ValidationPipe({ transform: true })) createPostDto: CreatePostDto,
   ) {
     return this.postsService.create({ createPostDto, userId: req.user.sub });
+  }
+
+  @ApiTags('Posts')
+  @ApiOkResponse({ description: 'Get posts successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @Public()
+  @Get()
+  async getAll() {
+    return this.postsService.getPosts({});
   }
 
   /**
@@ -58,6 +72,7 @@ export class PostsController {
   @ApiOkResponse({ description: 'Get post successfully' })
   @ApiNotFoundResponse({ description: 'Post not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @Public()
   @Get(':slug')
   async getPost(@Param('slug') slug: string) {
     try {
@@ -84,5 +99,48 @@ export class PostsController {
         );
       }
     }
+  }
+
+  /**
+   * Endpoint for deleting a post by its ID.
+   * @param id - The ID of the post to delete.
+   * @param req - The request object containing user information.
+   * @returns A response indicating the success of the post deletion.
+   */
+  @ApiTags('Posts')
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Delete post successfully' })
+  @ApiNotFoundResponse({ description: 'Post not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @Delete(':id')
+  async deletePost(@Param('id') id: string, @Req() req) {
+    return this.postsService.remove({
+      AND: [{ id }, { authorId: req.user.sub }],
+    });
+  }
+
+  @ApiTags('Posts')
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({ description: 'Update post successfully' })
+  @ApiNotFoundResponse({ description: 'Post not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiBody({
+    required: false,
+    type: UpdatePostDto,
+    description: 'Update post schema DTO',
+  })
+  @Patch(':slug')
+  @FormDataRequest()
+  async updatePost(
+    @Req() req,
+    @Param('slug') slug: string,
+    @Body(new ValidationPipe({ transform: true })) updatePostDto: UpdatePostDto,
+  ) {
+    return this.postsService.updatePost({
+      updatePostDto,
+      slug,
+      userId: req.user.sub,
+    });
   }
 }
