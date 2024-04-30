@@ -4,20 +4,30 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { DatabasesService } from 'src/databases/databases.service';
+import { PostsService } from 'src/posts/services/posts.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: DatabasesService) {}
+  constructor(
+    private prisma: DatabasesService,
+    private postsService: PostsService,
+  ) {}
 
+  /**
+   * Finds a single user based on the provided criteria.
+   * @param params Parameters for finding a user.
+   * @returns {Promise<User>} The found user.
+   */
   async findOne(params: {
     where: Prisma.UserWhereInput;
     include?: Prisma.UserInclude;
-  }) {
+  }): Promise<User> {
     const { where, include } = params;
 
+    // Find the user using Prisma's findFirst method
     return this.prisma.user.findFirst({ where, include });
   }
 
@@ -213,6 +223,58 @@ export class UsersService {
         // Log and throw InternalServerErrorException for other errors
         console.error(error);
         throw new InternalServerErrorException('failed to delete user');
+      }
+    }
+  }
+
+  /**
+   * Retrieves posts of a specific user.
+   * @param params Parameters for fetching user posts.
+   * @returns {Promise<{ message: string, statusCode: number, data: any }>} Object containing message, status code, and user posts.
+   */
+  async getUserPost(params: {
+    where?: Prisma.PostWhereInput;
+    orderBy?: Prisma.PostOrderByWithRelationInput;
+    include?: Prisma.PostInclude;
+    take?: number;
+    skip?: number;
+    userId: string;
+  }) {
+    const { include, orderBy, skip, take, where, userId } = params;
+
+    try {
+      // Find the user by ID
+      const user = await this.findOne({ where: { id: userId } });
+      // If user is not found, throw a NotFoundException
+      if (!user) throw new NotFoundException('User not found');
+
+      // Retrieve posts of the user
+      const posts = await this.postsService.findMany({
+        where: {
+          id: user.id,
+        },
+        include,
+        orderBy,
+        skip,
+        take,
+      });
+
+      // Return an object with success message, status code, and user posts
+      return {
+        message: 'Get user posts',
+        statusCode: HttpStatus.OK,
+        data: posts,
+      };
+    } catch (error) {
+      // If NotFoundException is thrown, rethrow it
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        // Log other errors and throw InternalServerErrorException
+        console.error(error);
+        throw new InternalServerErrorException(
+          'Failed to get user posts. something went wrong.',
+        );
       }
     }
   }

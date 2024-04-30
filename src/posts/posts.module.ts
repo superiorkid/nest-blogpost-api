@@ -8,5 +8,6 @@ import { StorageService } from './services/storage.service';
   imports: [DatabasesModule],
   controllers: [PostsController],
   providers: [PostsService, StorageService],
+  exports: [PostsService],
 })
 export class PostsModule {}

@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
+import { Public } from 'src/authentication/decorators/public.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -41,6 +42,35 @@ export class UsersController {
   @Delete(':id')
   async deleteUser(@Param('id') id: string) {
     return this.usersService.removeUser({ id });
+  }
+
+  /**
+   * Endpoint to retrieve posts of a specific user.
+   * @param id The ID of the user.
+   * @returns {Promise<any>} User posts along with associated tags.
+   */
+  @ApiTags('Users')
+  @ApiOkResponse({ description: 'Get user posts successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the user.',
+    type: String,
+    required: true,
+  })
+  @Public()
+  @Get(':id/posts')
+  async getUserPost(@Param('id') id: string) {
+    // Calling a service method to fetch user posts
+    return this.usersService.getUserPost({
+      userId: id,
+      where: {
+        authorId: id,
+      },
+      include: {
+        tags: true,
+      },
+    });
   }
 
   /**

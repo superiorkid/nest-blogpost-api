@@ -34,6 +34,30 @@ export class PostsService {
   }
 
   /**
+   * Retrieve multiple posts based on specified criteria.
+   * @param params - Parameters including the number of posts to retrieve, number of posts to skip, query conditions, sorting order, and included relations.
+   * @returns A promise resolving to an array of retrieved posts.
+   */
+  async findMany(params: {
+    take?: number;
+    skip?: number;
+    where?: Prisma.PostWhereInput;
+    orderBy?: Prisma.PostOrderByWithRelationInput;
+    include?: Prisma.PostInclude;
+  }) {
+    const { include, orderBy, skip, take, where } = params;
+
+    // Retrieve posts from the database based on provided parameters
+    return this.prisma.post.findMany({
+      where,
+      take,
+      skip,
+      orderBy,
+      include,
+    });
+  }
+
+  /**
    * Create a new post.
    * @param params - Parameters including the post data and user ID.
    * @throws ConflictException if a post with the same title already exists.
@@ -143,7 +167,7 @@ export class PostsService {
       });
 
       // Remove the associated cover file from storage
-      await this.storageService.removeFile('./public' + post.cover);
+      this.storageService.removeFile('./public' + post.cover);
 
       // Return success message
       return {
@@ -264,20 +288,18 @@ export class PostsService {
     skip?: number;
     where?: Prisma.PostWhereInput;
     orderBy?: Prisma.PostOrderByWithRelationInput;
+    include?: Prisma.PostInclude;
   }) {
-    const { orderBy, skip, take, where } = params;
+    const { orderBy, skip, take, where, include } = params;
 
     try {
       // Retrieve posts from the database based on provided parameters
-      const posts = await this.prisma.post.findMany({
+      const posts = await this.findMany({
         where,
-        take,
-        skip,
+        include,
         orderBy,
-        include: {
-          author: true,
-          tags: { include: { tag: true } },
-        },
+        skip,
+        take,
       });
 
       // Return a response indicating successful post retrieval
