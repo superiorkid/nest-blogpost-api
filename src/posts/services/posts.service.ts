@@ -42,7 +42,7 @@ export class PostsService {
   async create(params: { createPostDto: CreatePostDto; userId: string }) {
     try {
       const { createPostDto, userId } = params;
-      const { title, body, tags } = createPostDto;
+      const { title, body, tags, summary } = createPostDto;
 
       // Generate slug for the post title
       const postSlug = slug(title);
@@ -67,6 +67,7 @@ export class PostsService {
           body,
           cover,
           title,
+          summary,
           slug: postSlug,
           author: {
             connect: {
@@ -176,7 +177,7 @@ export class PostsService {
     slug: string;
   }) {
     const {
-      updatePostDto: { body, title, cover, tags },
+      updatePostDto: { body, title, cover, tags, summary },
     } = params;
 
     try {
@@ -213,6 +214,7 @@ export class PostsService {
         },
         data: {
           title,
+          summary,
           body,
           cover: postCover,
           slug: postSlug,

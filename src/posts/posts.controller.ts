@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   ValidationPipe,
 } from '@nestjs/common';
@@ -26,6 +27,7 @@ import {
 import { FormDataRequest } from 'nestjs-form-data';
 import { Public } from 'src/authentication/decorators/public.decorator';
 import { CreatePostDto } from './dto/create-post.dto';
+import { FindAllQuery } from './dto/find-all-query.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './services/posts.service';
 
@@ -59,8 +61,27 @@ export class PostsController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @Public()
   @Get()
-  async getAll() {
-    return this.postsService.getPosts({});
+  async getAll(@Query() query: FindAllQuery) {
+    const { sortBy, skip, take, q } = query;
+    const [field, sort] = sortBy ? sortBy.split('-') : ['date', 'desc'];
+
+    return this.postsService.getPosts({
+      where: {
+        title: {
+          contains: q,
+        },
+      },
+      take: take ?? undefined,
+      skip: skip ?? undefined,
+      orderBy:
+        field === 'title'
+          ? {
+              title: sort === 'desc' ? 'desc' : 'asc',
+            }
+          : field === 'date'
+            ? { createdAt: sort === 'desc' ? 'desc' : 'asc' }
+            : { createdAt: 'desc' },
+    });
   }
 
   /**

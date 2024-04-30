@@ -29,6 +29,16 @@ export class CreatePostDto {
   title: string;
 
   @ApiProperty({
+    description: 'Summary of the blog post',
+    example:
+      "In today's fast-paced world, managing your time effectively is crucial for productivity and success...",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @Length(50, 160)
+  summary: string;
+
+  @ApiProperty({
     description: 'Body/content of the blog post',
     example:
       '1. Set Clear Goals: Start by defining what you want to achieve and prioritize tasks accordingly...',
