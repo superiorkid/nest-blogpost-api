@@ -154,6 +154,24 @@ export class PostsController {
   }
 
   /**
+   * Deletes a post from the user's bookmarks if it exists.
+   * @param id - The ID of the post to be removed from bookmarks.
+   * @param req - The request object containing the authenticated user's information.
+   * @returns A response indicating the success of deleting the post from bookmarks.
+   */
+  @ApiTags('Bookmark')
+  @ApiBearerAuth()
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiCreatedResponse({ description: 'Post not exist in bookmark' })
+  @ApiNotFoundResponse({ description: 'Post already on bookmark' })
+  @Delete(':id/bookmark')
+  async deleteBookmark(@Param('id') id: string, @Req() req) {
+    return this.postsService.deletePostFromBookmark({
+      AND: [{ postId: id }, { userId: req.user.sub }],
+    });
+  }
+
+  /**
    * Endpoint for retrieving a post by its slug.
    * @param slug - The slug of the post to retrieve.
    * @returns A response containing the retrieved post.

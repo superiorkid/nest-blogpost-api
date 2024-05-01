@@ -391,4 +391,42 @@ export class PostsService {
       }
     }
   }
+
+  /**
+   * Deletes a post from the user's bookmarks if it exists.
+   * @param where - Conditions to identify the bookmarked post to be deleted.
+   * @returns A response indicating the success of deleting the post from bookmarks.
+   * @throws NotFoundException if the post is not found in the user's bookmarks.
+   * @throws InternalServerErrorException if an internal server error occurs.
+   */
+  async deletePostFromBookmark(where: Prisma.BookmarkWhereInput) {
+    try {
+      // Find the bookmarked post
+      const bookmark = await this.prisma.bookmark.findFirst({ where });
+      if (!bookmark) throw new NotFoundException('Post not exist in bookmark');
+
+      // Delete the post from the user's bookmarks
+      await this.prisma.bookmark.delete({
+        where: {
+          userId_postId: { postId: bookmark.postId, userId: bookmark.userId },
+        },
+      });
+
+      // Return a response indicating successful removal of the post from bookmarks
+      return {
+        message: 'Remove post from bookmark successfully',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      // Handle error and throw appropriate exceptions
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        console.error(error);
+        throw new InternalServerErrorException(
+          'Something went wrong. Failed to remove post from bookmark.',
+        );
+      }
+    }
+  }
 }
