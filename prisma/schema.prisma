@@ -18,6 +18,8 @@ model User {
   password  String?
   avatar    String?
   profile   Profile?
+  followers Follows[] @relation("following")
+  following Follows[] @relation("follower")
   accounts  Account[]
   posts     Post[]
   createdAt DateTime  @default(now())
@@ -78,4 +80,13 @@ model TagsOnPosts {
   assignedAt DateTime @default(now())
 
   @@id([postId, tagId])
+}
+
+model Follows {
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User   @relation("following", fields: [followingId], references: [id])
+  followingId String
+
+  @@id([followerId, followingId])
 }

@@ -5,15 +5,21 @@ import {
   Get,
   Param,
   Patch,
+  Post,
+  Put,
+  Req,
+  UnauthorizedException,
   ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiParam,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
@@ -69,6 +75,84 @@ export class UsersController {
       },
       include: {
         tags: true,
+      },
+    });
+  }
+
+  /**
+   * Endpoint to allow a user to follow another user.
+   * @param req The request object.
+   * @param id The ID of the current user.
+   * @param followedId The ID of the user to be followed.
+   * @returns {Promise<{ message: string, statusCode: number }>} Success message and status code.
+   */
+  @ApiTags('Users')
+  @ApiBearerAuth()
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiCreatedResponse({ description: 'Following user successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @Post(':id/follow/:followedId')
+  async follow(
+    @Req() req,
+    @Param('id') id: string,
+    @Param('followedId') followedId: string,
+  ) {
+    // Check if the current user is the owner of the token
+    const isCurrentUser = req.user.sub === id;
+    // If not, throw an UnauthorizedException
+    if (!isCurrentUser) throw new UnauthorizedException();
+
+    // Call the service method to follow the user
+    return this.usersService.followUser(id, followedId);
+  }
+
+  /**
+   * Endpoint to allow a user to unfollow another user.
+   * @param req The request object.
+   * @param id The ID of the current user.
+   * @param followedId The ID of the user to be unfollowed.
+   * @returns {Promise<{ message: string, statusCode: number }>} Success message and status code.
+   */
+  @ApiTags('Users')
+  @ApiBearerAuth()
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiOkResponse({ description: 'Unfollow user successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @Delete(':id/unfollow/:followedId')
+  async unfollow(
+    @Req() req,
+    @Param('id') id: string,
+    @Param('followedId') followedId: string,
+  ) {
+    // Check if the current user is the owner of the token
+    const isCurrentUser = req.user.sub === id;
+    // If not, throw an UnauthorizedException
+    if (!isCurrentUser) throw new UnauthorizedException();
+
+    // Call the service method to unfollow the user
+    return this.usersService.unfollowUser(id, followedId);
+  }
+
+  /**
+   * Endpoint to retrieve information about the current user.
+   * @param req The request object containing user information.
+   * @returns {Promise<{ message: string, statusCode: number, data: any }>} Success message, status code, and current user data.
+   */
+  @ApiBearerAuth()
+  @ApiTags('Users')
+  @ApiUnauthorizedResponse({ description: '' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiOkResponse({ description: 'Get current user successfully' })
+  @Get('current-user')
+  async currentUser(@Req() req) {
+    // Retrieve current user's data using UsersService
+    return this.usersService.getCurrentUser({
+      where: { id: req.user.sub },
+      include: {
+        posts: true,
+        profile: true,
+        accounts: true,
+        _count: { select: { followers: true, following: true, posts: true } },
       },
     });
   }

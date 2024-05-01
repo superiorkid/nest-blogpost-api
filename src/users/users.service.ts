@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -274,6 +275,145 @@ export class UsersService {
         console.error(error);
         throw new InternalServerErrorException(
           'Failed to get user posts. something went wrong.',
+        );
+      }
+    }
+  }
+
+  /**
+   * Follows a user by creating a new follow relationship.
+   * @param userId The ID of the user who wants to follow.
+   * @param followedId The ID of the user to be followed.
+   * @returns {Promise<{ message: string, statusCode: number }>} Success message and status code.
+   */
+  async followUser(userId: string, followedId: string) {
+    try {
+      // Find the current user who wants to follow
+      const user = await this.findOne({ where: { id: userId } });
+      // If user is not found, throw a NotFoundException
+      if (!user) throw new NotFoundException('User not found');
+
+      // Create a new follow relationship between users
+      await this.prisma.follows.create({
+        data: {
+          following: {
+            connect: { id: followedId }, // Connect the user to be followed
+          },
+          follower: {
+            connect: { id: user.id }, // Connect the follower user
+          },
+        },
+      });
+
+      // Return success message and status code
+      return {
+        message: 'following user successfully',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      // Handle specific Prisma errors
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          console.error(
+            `An operation failed because it depends on one or more records that were required but not found. ${error.message}}`,
+          );
+          throw new InternalServerErrorException(error.message);
+        }
+        // Handle NotFoundException
+      } else if (error instanceof NotFoundException) {
+        throw error;
+        // Handle other errors
+      } else {
+        console.error(error);
+        throw new InternalServerErrorException(
+          'Something went wrong. Failed to following user.',
+        );
+      }
+    }
+  }
+
+  /**
+   * Unfollows a user by deleting the follow relationship.
+   * @param currentUserId The ID of the current user who wants to unfollow.
+   * @param followedId The ID of the user to be unfollowed.
+   * @returns {Promise<{ message: string, statusCode: number }>} Success message and status code.
+   */
+  async unfollowUser(userId: string, followedId: string) {
+    try {
+      // Find the current user who wants to unfollow
+      const user = await this.findOne({ where: { id: userId } });
+      // If user is not found, throw a NotFoundException
+      if (!user) throw new NotFoundException('User not found');
+
+      // Delete the follow relationship between users
+      await this.prisma.follows.delete({
+        where: {
+          followerId_followingId: {
+            followerId: user.id,
+            followingId: followedId,
+          },
+        },
+      });
+
+      // Return success message and status code
+      return {
+        message: 'unfollow user successfully',
+        statusCode: HttpStatus.OK,
+      };
+    } catch (error) {
+      // Handle specific Prisma errors
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          console.error(
+            `An operation failed because it depends on one or more records that were required but not found. ${error.message}}`,
+          );
+          throw new InternalServerErrorException(error.message);
+        }
+        // Handle NotFoundException
+      } else if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        // Handle other errors
+        console.error(error);
+        throw new InternalServerErrorException(
+          'Something went wrong. Failed to following user.',
+        );
+      }
+    }
+  }
+
+  /**
+   * Retrieves the current user based on the provided criteria.
+   * @param params Parameters for finding the current user.
+   * @returns {Promise<{ message: string, statusCode: number, data: any }>} Success message, status code, and current user data.
+   */
+  async getCurrentUser(params: {
+    where: Prisma.UserWhereInput;
+    include?: Prisma.UserInclude;
+  }) {
+    const { where, include } = params;
+    try {
+      // Find the current user based on the provided criteria
+      const user = await this.findOne({ where, include });
+      // If user is not found, throw an UnauthorizedException
+      if (!user) throw new UnauthorizedException('Unauthorize');
+
+      // Return success message, status code, and current user data
+      return {
+        message: 'Get current user successfully',
+        statusCode: HttpStatus.OK,
+        data: user,
+      };
+    } catch (error) {
+      // If UnauthorizedException is thrown, rethrow it
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Handle other errors
+      else {
+        console.error(error);
+        throw new InternalServerErrorException(
+          'Somthing went wrong. failed to get current user.',
         );
       }
     }
