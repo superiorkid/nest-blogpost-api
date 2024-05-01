@@ -13,17 +13,18 @@ enum Gender {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   password  String?
   avatar    String?
   profile   Profile?
-  followers Follows[] @relation("following")
-  following Follows[] @relation("follower")
+  followers Follows[]  @relation("following")
+  following Follows[]  @relation("follower")
   accounts  Account[]
   posts     Post[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  saved     Bookmark[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@index([email])
 }
@@ -59,6 +60,7 @@ model Post {
   body      String        @db.Text
   cover     String
   tags      TagsOnPosts[]
+  bookmarks Bookmark[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -83,10 +85,20 @@ model TagsOnPosts {
 }
 
 model Follows {
-  follower    User   @relation("follower", fields: [followerId], references: [id])
+  follower    User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
   followerId  String
-  following   User   @relation("following", fields: [followingId], references: [id])
+  following   User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
   followingId String
 
   @@id([followerId, followingId])
+}
+
+model Bookmark {
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  assignedAt DateTime @default(now())
+
+  @@id([userId, postId])
 }

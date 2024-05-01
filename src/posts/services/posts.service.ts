@@ -159,8 +159,8 @@ export class PostsService {
       // If post is not found, throw NotFoundException
       if (!post) throw new NotFoundException('post not found');
 
-      // Delete the post using Prisma
-      const deletePost = await this.prisma.post.delete({
+      // Delete the post
+      await this.prisma.post.delete({
         where: {
           id: post.id,
         },
@@ -314,6 +314,81 @@ export class PostsService {
       throw new InternalServerErrorException(
         'Failed to get posts. something went wrong',
       );
+    }
+  }
+
+  /**
+   * Retrieves posts based on specified criteria, typically posts from users followed by the authenticated user.
+   * @param params - Parameters including query conditions and included relations.
+   * @returns A response containing the posts based on the provided criteria.
+   * @throws InternalServerErrorException if an internal server error occurs.
+   */
+  async getFollowingPosts(params: {
+    where: Prisma.PostWhereInput;
+    include?: Prisma.PostInclude;
+  }) {
+    const { where, include } = params;
+    try {
+      // Retrieve posts based on provided criteria
+      const posts = await this.prisma.post.findMany({
+        where,
+        include,
+      });
+
+      // Return a response containing the retrieved posts
+      return {
+        message: 'Get following post successfully',
+        statusCode: HttpStatus.OK,
+        data: posts,
+      };
+    } catch (error) {
+      // Log the error and throw an InternalServerErrorException
+      console.error(error);
+      throw new InternalServerErrorException(
+        'Something went wrong. Failed to get following posts.',
+      );
+    }
+  }
+
+  /**
+   * Adds a post to the user's bookmarks if it doesn't already exist.
+   * @param params - Parameters including data to create bookmark and conditions to check if bookmark already exists.
+   * @returns A response indicating the success of adding the post to bookmarks.
+   * @throws ConflictException if the post is already bookmarked.
+   * @throws InternalServerErrorException if an internal server error occurs.
+   */
+  async addPostToBookmark(params: {
+    data: Prisma.BookmarkCreateInput;
+    where: Prisma.BookmarkWhereInput;
+  }) {
+    const { data, where } = params;
+    try {
+      // Check if the post is already bookmarked
+      const isExist = await this.prisma.bookmark.findFirst({ where });
+      if (isExist) throw new ConflictException('post already on bookmark');
+
+      // Create the bookmark
+      await this.prisma.bookmark.create({
+        data,
+      });
+
+      // Return a response indicating successful bookmarking of the post
+      return {
+        message: 'Added post to bookmark successfully',
+        statusCode: HttpStatus.CREATED,
+      };
+    } catch (error) {
+      // Handle conflict exception
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      // Log the error and throw an InternalServerErrorException
+      else {
+        console.error(error);
+        throw new InternalServerErrorException(
+          'Something went wrong. Failed to add post to bookmark.',
+        );
+      }
     }
   }
 }

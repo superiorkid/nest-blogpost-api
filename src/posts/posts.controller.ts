@@ -22,6 +22,7 @@ import {
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
@@ -81,6 +82,74 @@ export class PostsController {
           : field === 'date'
             ? { createdAt: sort === 'desc' ? 'desc' : 'asc' }
             : { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Retrieves posts from users followed by the authenticated user.
+   * @param req - The request object containing the authenticated user's information.
+   * @returns A response containing the posts from users followed by the authenticated user.
+   */
+  @ApiTags('Posts')
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Get following post successfully' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @Get('following')
+  async followingPosts(@Req() req) {
+    // Retrieve posts from users followed by the authenticated user
+    return this.postsService.getFollowingPosts({
+      where: {
+        author: {
+          followers: {
+            some: {
+              followerId: req.user.sub,
+            },
+          },
+        },
+      },
+      include: {
+        author: true, // include author information
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+        _count: {
+          select: {
+            bookmarks: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Adds a post to the user's bookmarks.
+   * @param id - The ID of the post to be bookmarked.
+   * @param req - The request object containing the authenticated user's information.
+   * @returns A response indicating that the post has been successfully bookmarked.
+   */
+  @ApiTags('Bookmark')
+  @ApiBearerAuth()
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  @ApiCreatedResponse({ description: 'Added post to bookmark successfully' })
+  @ApiConflictResponse({ description: 'Post already on bookmark' })
+  @Post(':id/bookmark')
+  async addBookmark(@Param('id') id: string, @Req() req) {
+    return this.postsService.addPostToBookmark({
+      where: { AND: [{ postId: id }, { userId: req.user.sub }] },
+      data: {
+        post: {
+          connect: {
+            id,
+          },
+        },
+        user: {
+          connect: {
+            id: req.user.sub,
+          },
+        },
+      },
     });
   }
 
