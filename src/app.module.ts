@@ -1,3 +1,4 @@
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -43,6 +44,7 @@ import { UsersModule } from './users/users.module';
         },
       ],
     }),
+    CacheModule.register(),
     DatabasesModule,
     AuthenticationModule,
     UsersModule,

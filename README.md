@@ -14,5 +14,4 @@ simple blogpost api
 
 - swagger ("/docs")
 - rate limit
-- caching
 - google oauth using possport.js
