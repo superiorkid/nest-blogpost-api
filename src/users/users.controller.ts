@@ -24,6 +24,7 @@ import {
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
 import { Public } from 'src/authentication/decorators/public.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('users')
 export class UsersController {
@@ -86,7 +87,7 @@ export class UsersController {
    * @param followedId The ID of the user to be followed.
    * @returns {Promise<{ message: string, statusCode: number }>} Success message and status code.
    */
-  @ApiTags('Users')
+  @ApiTags('Follows')
   @ApiBearerAuth()
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @ApiCreatedResponse({ description: 'Following user successfully' })
@@ -113,7 +114,7 @@ export class UsersController {
    * @param followedId The ID of the user to be unfollowed.
    * @returns {Promise<{ message: string, statusCode: number }>} Success message and status code.
    */
-  @ApiTags('Users')
+  @ApiTags('Follows')
   @ApiBearerAuth()
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @ApiOkResponse({ description: 'Unfollow user successfully' })

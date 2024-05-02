@@ -33,8 +33,8 @@ export class AuthenticationService {
       const { email, firstName, lastName, password } = signUpDto;
 
       // check if user already exists
-      // if exists throw conflict exception
       const user = await this.usersService.validateUser(email);
+      // if exists throw conflict exception
       if (user) throw new ConflictException('user already exist');
 
       const newUser = await this.usersService.createUser({

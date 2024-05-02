@@ -9,8 +9,8 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .addBearerAuth()
-    .setTitle('Social Media API')
-    .setDescription('Social media api like facebook')
+    .setTitle('Blog Post API')
+    .setDescription('Nest.js Blog Post API')
     .setVersion('1.0')
     .build();
 

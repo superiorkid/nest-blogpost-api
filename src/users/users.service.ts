@@ -201,14 +201,14 @@ export class UsersService {
    * @throws {NotFoundException} If the user with the specified unique identifier is not found.
    * @throws {InternalServerErrorException} If an unexpected error occurs during the deletion operation.
    */
-  async removeUser(where: Prisma.UserWhereUniqueInput) {
+  async removeUser(where: Prisma.UserWhereInput) {
     try {
       // Find the user based on the provided unique identifier
       const user = await this.findOne({ where });
       if (!user) throw new NotFoundException('user not found');
 
       // Delete the user
-      await this.prisma.user.delete({ where });
+      await this.prisma.user.delete({ where: { id: user.id } });
 
       // Return success message
       return {

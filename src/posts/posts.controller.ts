@@ -22,7 +22,6 @@ import {
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
-  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
@@ -57,15 +56,22 @@ export class PostsController {
     return this.postsService.create({ createPostDto, userId: req.user.sub });
   }
 
+  /**
+   * Retrieves posts based on specified criteria.
+   * @param query - Query parameters including sorting, pagination, and search.
+   * @returns A response containing the posts based on the provided criteria.
+   */
   @ApiTags('Posts')
   @ApiOkResponse({ description: 'Get posts successfully' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   @Public()
   @Get()
   async getAll(@Query() query: FindAllQuery) {
+    // Extract query parameters
     const { sortBy, skip, take, q } = query;
     const [field, sort] = sortBy ? sortBy.split('-') : ['date', 'desc'];
 
+    // Retrieve posts based on provided criteria
     return this.postsService.getPosts({
       where: {
         title: {

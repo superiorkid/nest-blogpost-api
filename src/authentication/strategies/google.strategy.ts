@@ -21,7 +21,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientID: configService.get<string>('GOOGLE_CLIENT_ID'),
       clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET'),
       callbackURL: configService.get<string>('CALLBACK_URL'),
-      scope: ['profile', 'email', 'openid'],
+      scope: ['profile', 'email'],
       prompt: 'select_account',
     });
   }
@@ -56,8 +56,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
     // Check if the user exists in the database.
     const user = await this.usersService.validateUser(email);
+    // If user does not exist, create a new user in the system.
     if (!user) {
-      // If user does not exist, create a new user in the system.
       const newUser = await this.usersService.createUser({
         userInputs: { email, avatar },
         profileInputs: { firstName, lastName },
@@ -67,8 +67,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       // Assign new user's data to payload.
       payloadData.id = newUser.id;
       payloadData.email = newUser.email;
-    } else {
-      // If user already exists, use existing user's data.
+    }
+    // If user already exists, use existing user's data.
+    else {
       payloadData.id = user.id;
       payloadData.email = user.email;
     }
